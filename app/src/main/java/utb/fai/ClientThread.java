@@ -1,9 +1,9 @@
 package utb.fai;
 
 import java.io.*;
-import java.net.*;
+import java.net.Socket;
 
-public class ClientThread extends Thread {
+public class ClientThread implements Runnable {
 
     private Socket clientSocket;
 
@@ -13,6 +13,30 @@ public class ClientThread extends Thread {
 
     @Override
     public void run() {
-        // Implementation of processing incoming communication from the telnet client
+        try (
+            BufferedReader in = new BufferedReader(
+                new InputStreamReader(clientSocket.getInputStream())
+            );
+            BufferedWriter out = new BufferedWriter(
+                new OutputStreamWriter(clientSocket.getOutputStream())
+            )
+        ) {
+            String message;
+            while ((message = in.readLine()) != null) {
+                // Odeslání přijaté zprávy zpět klientovi (Echo)
+                out.write(message);
+                out.newLine();
+                out.flush();
+            }
+        } catch (IOException e) {
+            System.out.println("Klient odpojen: " + clientSocket.getInetAddress());
+        } finally {
+            try {
+                clientSocket.close();
+            } catch (IOException e) {
+                System.out.println("Chyba při uzavírání socketu.");
+                e.printStackTrace();
+            }
+        }
     }
 }
